@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -101,7 +101,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
+function SidebarNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openGroups, setOpenGroups] = useState<string[]>(['Users']);
@@ -222,5 +222,13 @@ export function Sidebar() {
         <p className="text-[10px] text-gray-400 text-center">v1.0.0 · Litmus Platform</p>
       </div>
     </aside>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <Suspense fallback={<aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-gray-100 z-40 shadow-sm" />}>
+      <SidebarNav />
+    </Suspense>
   );
 }
