@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
@@ -73,7 +73,7 @@ function ActionMenu({ user, onBan, onUnban, onDelete }: {
   );
 }
 
-export default function UsersPage() {
+function UsersPageContent() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState(() => searchParams.get('type') || '');
   const [status, setStatus] = useState('');
@@ -259,5 +259,13 @@ export default function UsersPage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={null}>
+      <UsersPageContent />
+    </Suspense>
   );
 }
