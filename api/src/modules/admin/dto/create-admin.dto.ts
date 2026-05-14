@@ -1,24 +1,34 @@
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator';
 
 export class CreateAdminDto {
+  @IsOptional()
   @IsString()
-  username: string;
+  user_id?: string;
 
+  @ValidateIf(dto => !dto.user_id)
   @IsString()
-  first_name: string;
+  username?: string;
 
+  @ValidateIf(dto => !dto.user_id)
   @IsString()
-  last_name: string;
+  first_name?: string;
 
+  @ValidateIf(dto => !dto.user_id)
+  @IsString()
+  last_name?: string;
+
+  @ValidateIf(dto => !dto.user_id)
   @IsEmail()
-  email: string;
+  email?: string;
 
+  @ValidateIf(dto => !dto.user_id)
   @IsString()
   @MinLength(8)
-  password: string;
+  password?: string;
 
-  @IsEnum(['SUPER_ADMIN', 'ADMIN', 'SHIFT_COORDINATOR', 'CREDENTIALING_MANAGER', 'SUPPORT_AGENT', 'FINANCE_MANAGER'])
-  admin_role: string;
+  @IsOptional()
+  @IsIn(['SUPER_ADMIN', 'ADMIN', 'SHIFT_COORDINATOR', 'CREDENTIALING_MANAGER', 'SUPPORT_AGENT', 'FINANCE_MANAGER'])
+  admin_role?: string;
 
   @IsOptional()
   @IsArray()

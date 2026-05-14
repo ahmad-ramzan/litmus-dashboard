@@ -144,11 +144,16 @@ export class ShiftsService {
     return { message: 'Shift boosted', shift: data };
   }
 
-  async export() {
-    const { data, error } = await this.supabase.db
+  async export(query: { status?: string; search?: string } = {}) {
+    let q = this.supabase.db
       .from('shifts')
       .select('shift_id, shift_title, location, shift_date, shift_start_time, shift_end_time, status, pay_rate, pay_type, applicant_count, created_at')
       .order('created_at', { ascending: false });
+
+    if (query.status) q = q.eq('status', query.status);
+    if (query.search) q = q.ilike('shift_title', `%${query.search}%`);
+
+    const { data, error } = await q;
 
     if (error) throw new BadRequestException(error.message);
 

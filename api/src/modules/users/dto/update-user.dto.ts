@@ -11,6 +11,10 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
   phone_number?: string;
 
   @IsOptional()
@@ -24,4 +28,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   role?: string;
+
+  @IsOptional()
+  profile?: Record<string, any>;
 }

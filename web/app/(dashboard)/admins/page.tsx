@@ -47,10 +47,28 @@ export default function AdminsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      username: form.username.trim(),
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      email: form.email.trim(),
+      password: form.password,
+      admin_role: form.admin_role,
+      permissions: [],
+      send_welcome_email: form.send_welcome_email,
+    };
+    if (!payload.username || !payload.first_name || !payload.last_name || !payload.email) {
+      setError('All fields are required.');
+      return;
+    }
+    if (payload.password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
     setLoading('create');
     setError('');
     try {
-      await api.post('/admin', form);
+      await api.post('/admin', payload);
       await mutate();
       setAddModal(false);
       setForm({ username: '', first_name: '', last_name: '', email: '', password: '', admin_role: 'ADMIN', send_welcome_email: false });
@@ -135,7 +153,7 @@ export default function AdminsPage() {
           <Input label="Username" value={form.username} onChange={e => set('username', e.target.value)} required />
           <Input label="Email" type="email" value={form.email} onChange={e => set('email', e.target.value)} required />
           <Input label="Password" type="password" placeholder="Min 8 characters" value={form.password} onChange={e => set('password', e.target.value)} required />
-          <Select label="Role" options={ADMIN_ROLES} value={form.admin_role} onChange={e => set('admin_role', e.target.value)} />
+          <Select label="Role" options={ADMIN_ROLES} value={form.admin_role} onChange={e => set('admin_role', e.target.value as AdminRole)} />
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"

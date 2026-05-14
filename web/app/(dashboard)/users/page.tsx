@@ -81,6 +81,7 @@ function UsersPageContent() {
   const [page, setPage] = useState(1);
   const [banModal, setBanModal] = useState<User | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [banError, setBanError] = useState('');
   const [actionLoading, setActionLoading] = useState('');
 
   // Sync URL → tab when navigating from sidebar
@@ -95,13 +96,20 @@ function UsersPageContent() {
 
   const handleBan = async () => {
     if (!banModal) return;
+    if (banReason.trim().length < 5) {
+      setBanError('Reason must be at least 5 characters.');
+      return;
+    }
     setActionLoading('ban');
+    setBanError('');
     try {
       await api.post(`/users/${banModal.user_id}/ban`, { reason: banReason });
       await mutate();
       setBanModal(null);
       setBanReason('');
-    } catch {}
+    } catch (err: any) {
+      setBanError(err.message || 'Failed to ban user');
+    }
     setActionLoading('');
   };
 
@@ -171,7 +179,7 @@ function UsersPageContent() {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/users/export`}>
+          <Button variant="secondary" size="sm" onClick={() => api.download(`/users/export${buildQueryString({ type: tab, status, search })}`, 'users.csv')}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Export
           </Button>
@@ -244,15 +252,16 @@ function UsersPageContent() {
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Reason *</label>
             <textarea
               value={banReason}
-              onChange={e => setBanReason(e.target.value)}
+              onChange={e => { setBanReason(e.target.value); setBanError(''); }}
               rows={3}
               placeholder="Explain the reason for this ban..."
               className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400 resize-none"
             />
+            {banError && <p className="mt-1.5 text-xs text-red-600">{banError}</p>}
           </div>
           <div className="flex gap-3 justify-end">
-            <Button variant="secondary" onClick={() => setBanModal(null)}>Cancel</Button>
-            <Button variant="danger" loading={actionLoading === 'ban'} onClick={handleBan} disabled={!banReason.trim()}>
+            <Button variant="secondary" onClick={() => { setBanModal(null); setBanError(''); }}>Cancel</Button>
+            <Button variant="danger" loading={actionLoading === 'ban'} onClick={handleBan} disabled={banReason.trim().length < 5}>
               Ban User
             </Button>
           </div>

@@ -65,6 +65,7 @@ export default function ProfessionalsPage() {
   const [page, setPage] = useState(1);
   const [banModal, setBanModal] = useState<User | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [banError, setBanError] = useState('');
   const [addModal, setAddModal] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
@@ -74,12 +75,17 @@ export default function ProfessionalsPage() {
   });
   const setF = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
-  const qs = buildQueryString({ type: 'PROFESSIONAL', status, search, page, limit: 15 });
+  const qs = buildQueryString({ type: 'PROFESSIONAL', status, search, role, page, limit: 15 });
   const { data, mutate } = useSWR(`/users${qs}`, fetcher);
 
   const handleBan = async () => {
     if (!banModal) return;
-    try { await api.post(`/users/${banModal.user_id}/ban`, { reason: banReason }); await mutate(); setBanModal(null); setBanReason(''); } catch {}
+    if (banReason.trim().length < 5) {
+      setBanError('Reason must be at least 5 characters.');
+      return;
+    }
+    setBanError('');
+    try { await api.post(`/users/${banModal.user_id}/ban`, { reason: banReason }); await mutate(); setBanModal(null); setBanReason(''); } catch (err: any) { setBanError(err.message || 'Failed to ban professional'); }
   };
 
   const handleUnban = async (userId: string) => {
@@ -134,7 +140,7 @@ export default function ProfessionalsPage() {
           className="w-36"
         />
         <div className="ml-auto flex gap-2">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={() => api.download(`/users/export${buildQueryString({ type: 'PROFESSIONAL', status, search, role })}`, 'professionals.csv')}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Export
           </Button>
@@ -201,10 +207,13 @@ export default function ProfessionalsPage() {
           <p className="text-sm text-gray-500">
             Banning <strong className="text-gray-900">{banModal?.first_name} {banModal?.last_name}</strong> will prevent platform access.
           </p>
-          <textarea value={banReason} onChange={e => setBanReason(e.target.value)} rows={3} placeholder="Reason..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-400/40" />
+          <div>
+            <textarea value={banReason} onChange={e => { setBanReason(e.target.value); setBanError(''); }} rows={3} placeholder="Reason..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-400/40" />
+            {banError && <p className="mt-1.5 text-xs text-red-600">{banError}</p>}
+          </div>
           <div className="flex gap-3 justify-end">
-            <Button variant="secondary" onClick={() => setBanModal(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleBan} disabled={!banReason.trim()}>Ban</Button>
+            <Button variant="secondary" onClick={() => { setBanModal(null); setBanError(''); }}>Cancel</Button>
+            <Button variant="danger" onClick={handleBan} disabled={banReason.trim().length < 5}>Ban</Button>
           </div>
         </div>
       </Modal>

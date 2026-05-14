@@ -23,8 +23,12 @@ export class ShiftsController {
   }
 
   @Get('export')
-  async export(@Res() res: Response) {
-    const csv = await this.shiftsService.export();
+  async export(
+    @Res() res: Response,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    const csv = await this.shiftsService.export({ status, search });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=shifts.csv');
     res.send(csv);

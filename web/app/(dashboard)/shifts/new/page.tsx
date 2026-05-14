@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import type { Business, PaginatedResponse } from '@/types';
+
+const fetcher = (url: string) => api.get<PaginatedResponse<Business>>(url);
 
 export default function NewShiftPage() {
   const router = useRouter();
@@ -15,6 +19,7 @@ export default function NewShiftPage() {
   const [skillInput, setSkillInput] = useState('');
   const [jobTypes, setJobTypes] = useState<string[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const { data: businesses } = useSWR('/businesses?limit=100', fetcher);
 
   const [form, setForm] = useState({
     shift_title: '', business_id: '', location: '', shift_date: '',
@@ -38,12 +43,29 @@ export default function NewShiftPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.business_id) {
+      setError('Select a business before posting the shift.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       await api.post('/shifts', {
-        ...form,
+        shift_title: form.shift_title.trim(),
+        business_id: form.business_id,
+        location: form.location.trim() || undefined,
+        shift_date: form.shift_date || undefined,
+        shift_start_time: form.shift_start_time || undefined,
+        shift_end_time: form.shift_end_time || undefined,
+        shift_type: form.shift_type,
+        contact_person_name: form.contact_person_name.trim() || undefined,
+        contact_person_email: form.contact_person_email.trim() || undefined,
+        additional_info: form.additional_info.trim() || undefined,
         pay_rate: parseFloat(form.pay_rate) || undefined,
+        pay_type: form.pay_type,
+        payment_timeline: form.payment_timeline || undefined,
+        request_document_uploads: form.request_document_uploads,
+        flexible_rate_allowed: form.flexible_rate_allowed,
         verification_level_required: Number(form.verification_level_required),
         required_skills: skills,
         job_types: jobTypes,
@@ -73,7 +95,17 @@ export default function NewShiftPage() {
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">1. Shift Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Role Title *" placeholder="e.g. ER Nurse" value={form.shift_title} onChange={e => set('shift_title', e.target.value)} required />
-            <Input label="Business ID *" placeholder="business UUID" value={form.business_id} onChange={e => set('business_id', e.target.value)} required />
+            <Select
+              label="Business *"
+              placeholder="Select business"
+              value={form.business_id}
+              onChange={e => set('business_id', e.target.value)}
+              options={(businesses?.data || []).map(business => ({
+                value: business.business_id,
+                label: business.business_name || business.email,
+              }))}
+              required
+            />
             <Input label="Location" placeholder="Address, City, State" value={form.location} onChange={e => set('location', e.target.value)} className="sm:col-span-2" />
             <Input label="Shift Date" type="date" value={form.shift_date} onChange={e => set('shift_date', e.target.value)} />
             <div className="grid grid-cols-2 gap-2">

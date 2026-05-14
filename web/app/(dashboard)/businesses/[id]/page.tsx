@@ -22,6 +22,9 @@ export default function BusinessDetailPage() {
   const { data: user, mutate } = useSWR(`/users/${id}`, fetcher);
   const [activeTab, setActiveTab] = useState('Business Details');
   const [saveLoading, setSaveLoading] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminMessage, setAdminMessage] = useState('');
+  const [adminError, setAdminError] = useState('');
 
   const [form, setForm] = useState({
     business_name: '', email: '', phone_number: '',
@@ -44,12 +47,12 @@ export default function BusinessDetailPage() {
       phone_number: user.phone_number || '',
       business_type: p.business_type || '',
       country: p.country || '',
-      year_of_business: p.year_of_business || '',
+      year_of_business: p.year_established || p.year_of_business || '',
       website_url: p.website_url || '',
-      about: p.about || '',
+      about: p.about_business || p.about || '',
     });
-    setSpecialties(p.certifications || []);
-    setAreas(p.service_areas || []);
+    setSpecialties(p.business_specialties || p.certifications || []);
+    setAreas(p.business_areas || p.service_areas || []);
     setLinks(p.website_url ? [p.website_url] : []);
   }, [user]);
 
@@ -57,12 +60,27 @@ export default function BusinessDetailPage() {
     setSaveLoading(true);
     try {
       await api.patch(`/users/${id}`, {
+        email: form.email,
         phone_number: form.phone_number,
         profile: { ...form, certifications: specialties, service_areas: areas },
       });
       await mutate();
     } catch {}
     setSaveLoading(false);
+  };
+
+  const handleAddAdmin = async () => {
+    setAdminLoading(true);
+    setAdminMessage('');
+    setAdminError('');
+    try {
+      await api.post(`/admin`, { user_id: id });
+      setAdminMessage('Admin access added.');
+    } catch (err: any) {
+      setAdminError(err.message || 'Failed to add admin access');
+    } finally {
+      setAdminLoading(false);
+    }
   };
 
   if (!user) {
@@ -290,11 +308,19 @@ export default function BusinessDetailPage() {
               </section>
 
               <div className="pt-2">
-                <Button onClick={async () => {
-                  await api.post(`/admin`, { user_id: id });
-                }} variant="secondary">
+                <Button loading={adminLoading} onClick={handleAddAdmin} variant="secondary">
                   Add New Admin
                 </Button>
+                {adminError && (
+                  <div className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {adminError}
+                  </div>
+                )}
+                {adminMessage && (
+                  <div className="mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    {adminMessage}
+                  </div>
+                )}
               </div>
             </div>
           )}

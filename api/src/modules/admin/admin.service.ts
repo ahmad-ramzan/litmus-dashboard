@@ -41,6 +41,37 @@ export class AdminService {
   }
 
   async create(dto: CreateAdminDto) {
+    if (dto.user_id) {
+      const { data: user, error: userError } = await this.supabase.db
+        .from('users')
+        .select('user_id')
+        .eq('user_id', dto.user_id)
+        .single();
+
+      if (userError || !user) throw new NotFoundException('User not found');
+
+      const { data: existingAdmin } = await this.supabase.db
+        .from('admin_users')
+        .select('admin_id')
+        .eq('admin_id', dto.user_id)
+        .single();
+
+      if (existingAdmin) throw new BadRequestException('User is already an admin');
+
+      const { data: adminUser, error: adminError } = await this.supabase.db
+        .from('admin_users')
+        .insert({
+          admin_id: dto.user_id,
+          admin_role: dto.admin_role || 'ADMIN',
+          permissions: dto.permissions || [],
+        })
+        .select()
+        .single();
+
+      if (adminError) throw new BadRequestException(adminError.message);
+      return { adminUser };
+    }
+
     const { send_welcome_email, password, admin_role, permissions, ...userFields } = dto;
 
     const password_hash = await bcrypt.hash(password, 10);
@@ -70,7 +101,7 @@ export class AdminService {
       .from('admin_users')
       .insert({
         admin_id: user.user_id,
-        admin_role,
+        admin_role: admin_role || 'ADMIN',
         permissions: permissions || [],
       })
       .select()
@@ -79,7 +110,7 @@ export class AdminService {
     if (adminError) throw new BadRequestException(adminError.message);
 
     if (send_welcome_email) {
-      console.log(`[EMAIL] Welcome email would be sent to ${dto.email} with role ${admin_role}`);
+      console.log(`[EMAIL] Welcome email would be sent to ${dto.email} with role ${admin_role || 'ADMIN'}`);
     }
 
     const { password_hash: _, ...safeUser } = user;
@@ -100,11 +131,11 @@ export class AdminService {
 
   async remove(id: string) {
     const { error } = await this.supabase.db
-      .from('users')
+      .from('admin_users')
       .delete()
-      .eq('user_id', id);
+      .eq('admin_id', id);
 
     if (error) throw new BadRequestException(error.message);
-    return { message: 'Admin user deleted' };
+    return { message: 'Admin access removed' };
   }
 }

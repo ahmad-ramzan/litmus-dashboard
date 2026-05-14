@@ -27,4 +27,28 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   role?: string;
+
+  @IsOptional()
+  @IsString()
+  primary_role?: string;
+
+  @IsOptional()
+  @IsString()
+  specialty?: string;
+
+  @IsOptional()
+  @IsString()
+  business_name?: string;
+
+  @IsOptional()
+  @IsString()
+  business_type?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  website_url?: string;
 }

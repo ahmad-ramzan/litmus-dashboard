@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -17,15 +18,29 @@ export class UsersController {
     @Query('type') type?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('businessType') businessType?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.usersService.findAll({ type, status, search, page: +page || 1, limit: +limit || 20 });
+    return this.usersService.findAll({ type, status, search, role, businessType, page: +page || 1, limit: +limit || 20 });
+  }
+
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
   }
 
   @Get('export')
-  async export(@Res() res: Response) {
-    const csv = await this.usersService.export();
+  async export(
+    @Res() res: Response,
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('businessType') businessType?: string,
+  ) {
+    const csv = await this.usersService.export({ type, status, search, role, businessType });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
     res.send(csv);
